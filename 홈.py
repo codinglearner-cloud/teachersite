@@ -62,7 +62,7 @@ def main_page():
             del st.session_state[key]
         
 
-# 교사용 성적 관리 페이지 함수
+# 교사용 성적 입력 페이지 함수
 def teacher_input_page():
     st.title("학생 성적 입력 페이지")
     if st.session_state.logged_in:
@@ -132,31 +132,91 @@ def teacher_input_page():
 def teacher_grade_page():
     st.title("학생 성적 조회 페이지")
     if st.session_state.logged_in:
-        search_option = st.selectbox("검색 기준", ["학번", "이름", "수강강좌"])
-        search_value = st.text_input(f"{search_option} 입력")
+        search_option = st.selectbox("검색 기준", ["학번", "수강강좌"])
+        
+        if search_option == "학번":
 
-        if st.button("조회"):
-            if search_option == "학번":
-                query = {"학번": search_value}
-            elif search_option == "이름":
-                query = {"이름": search_value}
-            elif search_option == "수강강좌":
-                query = {"수강강좌": search_value}
+            search_value = st.text_input("학번 입력")
 
-            results = evaluation_collection.find(query)
-            results_list = list(results)
+            if search_value:
 
-            if results_list:
-                for result in results_list:
-                    st.write(f"학번: {result['학번']}")
-                    st.write(f"이름: {result['이름']}")
-                    st.write(f"수강과목: {result['수강과목']}")
-                    st.write(f"수강강좌: {result['수강강좌']}")
-                    st.write(f"성적등급: {result['성적등급']}")
-                    st.write(f"피드백: {result['피드백']}")
-                    st.write("---")
+                if st.button("조회"):
+                    try:
+                        search_value = int(search_value)
+                    except ValueError:
+                        st.error("유효한 학번을 입력해주세요.")
+                    
+                    query = {"학번": search_value}
+
+                    results = evaluation_collection.find(query)
+                    results_list = list(results)
+
+                    if results_list:
+                        for result in results_list:
+                            st.write(f"학번: {result['학번']}")
+                            st.write(f"이름: {result['이름']}")
+                            st.write(f"수강과목: {result['수강과목']}")
+                            st.write(f"수강강좌: {result['수강강좌']}")
+                            st.write(f"성적등급: {result['성적등급']}")
+                            st.write(f"피드백: {result['피드백']}")
+                            st.write("---")
+                    else:
+                        st.error("해당 정보를 찾을 수 없습니다.")
+
+                else:
+                    st.error("조회버튼을 눌러주세요")
+
             else:
-                st.error("해당 정보를 찾을 수 없습니다.")
+                st.error("학번을 입력해주세요")
+        
+        elif search_option == "수강강좌":
+            # 과목 선택
+                classes_info = classes_info_collection.find({}, {"_id":0, "subject_name":1})
+                subject_list = [classes_info['subject_name'] for classes_info in classes_info]
+                selected_subject = st.selectbox("과목 선택", subject_list)
+                
+                # 수강 강좌 선택
+                if selected_subject:
+                    
+                    subject_doc = classes_info_collection.find_one({"subject_name": selected_subject})
+                    
+                    if subject_doc and "classes" in subject_doc:
+                        # classes 배열에서 class_name 목록 생성
+                        course_list = [cls.get("class_name", "강좌명 없음") for cls in subject_doc["classes"]]
+
+                        if course_list:
+                            selected_course = st.selectbox("수강 강좌 선택", course_list)
+
+                            if st.button("조회"):
+                                
+                                query = {"수강강좌": selected_course}
+
+                                results = evaluation_collection.find(query)
+                                results_list = list(results)
+
+                                if results_list:
+                                    for result in results_list:
+                                        st.write(f"학번: {result['학번']}")
+                                        st.write(f"이름: {result['이름']}")
+                                        st.write(f"수강과목: {result['수강과목']}")
+                                        st.write(f"수강강좌: {result['수강강좌']}")
+                                        st.write(f"성적등급: {result['성적등급']}")
+                                        st.write(f"피드백: {result['피드백']}")
+                                        st.write("---")
+                                else:
+                                    st.error("해당 정보를 찾을 수 없습니다.")
+                            
+                            else:
+                                st.error("조회버튼을 눌러주세요")
+
+
+                        else:
+                            st.warning("해당 과목에는 수강 강좌가 없습니다.")
+                    else:
+                        st.warning("해당 과목의 클래스 정보를 찾을 수 없습니다.")           
+                    
+                else:
+                    st.write("과목을 선택해주세요")
     else:
         st.error("로그인이 필요합니다.")
 
