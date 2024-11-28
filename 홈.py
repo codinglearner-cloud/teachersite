@@ -15,6 +15,9 @@ position_collection = teacher_position_db["position"]
 highschool_db = client["highschool_db"]
 classes_info_collection = highschool_db["classes_info"]
 
+evaluation_db = client["teacher_page"]
+evaluation_collection = evaluation_db["evaluation"]
+
 # 직책 목록 가져오기
 positions = position_collection.find({}, {"_id": 0, "직책": 1})  # "_id" 필드는 제외하고, "직책" 필드만 가져옴
 position_list = [item['직책'] for item in positions] 
