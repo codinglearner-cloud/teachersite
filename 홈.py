@@ -62,7 +62,6 @@ def main_page():
             del st.session_state[key]
         
 
-# 교사용 성적 입력 페이지 함수
 def teacher_input_page():
     st.title("학생 성적 입력 페이지")
     if st.session_state.logged_in:
@@ -74,50 +73,58 @@ def teacher_input_page():
                 student = student_collection.find_one({"학번": stu_num})
                 if student:
                     st.write(f"학생 이름: {student.get('이름')}")
+                    
                     # 과목 선택
-                    classes_info = classes_info_collection.find({}, {"_id":0, "subject_name":1})
+                    classes_info = classes_info_collection.find({}, {"_id": 0, "subject_name": 1})
                     subject_list = [classes_info['subject_name'] for classes_info in classes_info]
-                    selected_subject = st.selectbox("과목 선택", subject_list)
+                    selected_subject = st.selectbox("과목 선택", ["선택하세요"] + subject_list)
                     
                     # 수강 강좌 선택
-                    if selected_subject:
-                        
+                    if selected_subject and selected_subject != "선택하세요":
                         subject_doc = classes_info_collection.find_one({"subject_name": selected_subject})
                         
                         if subject_doc and "classes" in subject_doc:
-                            # classes 배열에서 class_name 목록 생성
                             course_list = [cls.get("class_name", "강좌명 없음") for cls in subject_doc["classes"]]
-
                             if course_list:
-                                selected_course = st.selectbox("수강 강좌 선택", course_list)
+                                selected_course = st.selectbox("수강 강좌 선택", ["선택하세요"] + course_list)
                             else:
                                 st.warning("해당 과목에는 수강 강좌가 없습니다.")
                         else:
                             st.warning("해당 과목의 클래스 정보를 찾을 수 없습니다.")           
-                        
                     else:
+                        selected_course = None
                         st.write("과목을 선택해주세요")
                     
                     # 성적 등급 선택
-                    grade = st.selectbox("성적 등급", ["A", "B", "C", "F"])
+                    grade = st.selectbox("성적 등급", ["선택하세요", "A", "B", "C", "F"])
 
                     if grade == "F":
                         feedback = "재수강이 필요합니다"
-                    else:
+                    elif grade != "선택하세요":
                         feedback = st.text_area("피드백 입력")
-                    
+                    else:
+                        feedback = None
 
                     if st.button("성적 입력"):
-                        evaluation = {
-                            "학번": stu_num,
-                            "이름": student['이름'],
-                            "수강과목": selected_subject,
-                            "수강강좌": selected_course,
-                            "성적등급": grade,
-                            "피드백": feedback
-                        }
-                        evaluation_collection.insert_one(evaluation)
-                        st.success(f"{student['이름']} 학생의 성적이 등록되었습니다.")
+                        if not selected_subject or selected_subject == "선택하세요":
+                            st.error("수강 과목을 선택해주세요.")
+                        elif not selected_course or selected_course == "선택하세요":
+                            st.error("수강 강좌를 선택해주세요.")
+                        elif not grade or grade == "선택하세요":
+                            st.error("성적 등급을 선택해주세요.")
+                        elif feedback is None or feedback.strip() == "":
+                            st.error("피드백을 입력해주세요.")
+                        else:
+                            evaluation = {
+                                "학번": stu_num,
+                                "이름": student['이름'],
+                                "수강과목": selected_subject,
+                                "수강강좌": selected_course,
+                                "성적등급": grade,
+                                "피드백": feedback
+                            }
+                            evaluation_collection.insert_one(evaluation)
+                            st.success(f"{student['이름']} 학생의 성적이 등록되었습니다.")
                 else:
                     st.error("학생 정보를 찾을 수 없습니다. 학번을 다시 입력해주세요.")
             except ValueError:
