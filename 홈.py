@@ -1,5 +1,7 @@
 import streamlit as st
 from pymongo import MongoClient
+from streamlit.runtime.scriptrunner import RerunException
+from streamlit.runtime.scriptrunner import ScriptRunner
 
 # MongoDB 연결 설정
 MONGO_URI = "mongodb+srv://jsheek93:j103203j@cluster0.7pdc1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
@@ -32,6 +34,18 @@ if "position" not in st.session_state:
 if "name" not in st.session_state:
     st.session_state.name = ""
 
+def rerun():
+    st.markdown(
+        """
+        <script>
+        window.location.reload();
+        </script>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+
 # 사용자 인증 함수
 def authenticate_user(username, password):
     user = users_collection.find_one({"username": username, "password": password})
@@ -60,7 +74,9 @@ def main_page():
         # 세션 초기화
         for key in list(st.session_state.keys()):
             del st.session_state[key]
-        
+
+        st.rerun()
+
 
 def teacher_input_page():
     st.title("학생 성적 입력 페이지")
@@ -244,8 +260,7 @@ if not st.session_state.logged_in:
                 st.session_state.username = username
                 st.session_state.name = user.get("name")
                 st.session_state.position = user.get("position")
-                st.success(f"환영합니다, {st.session_state.name} 선생님! ({st.session_state.position})")
-                
+                st.rerun()
             else:
                 st.error("아이디 또는 비밀번호가 잘못되었습니다.")
 
@@ -263,8 +278,7 @@ if not st.session_state.logged_in:
                 register_user(username, password, role, additional_info)
                 st.success("회원가입이 완료되었습니다! 로그인하세요.")
 else:
-    # 로그인 성공 후 사이드바 메뉴 추가
-  
+    # 로그인 성공 후 사이드바 메뉴 추가  
     with st.sidebar:
         page = st.selectbox("페이지 선택", ["메인 페이지", "학생 성적 입력", "학생 성적 조회"])
     
