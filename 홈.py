@@ -190,7 +190,7 @@ if not st.session_state.logged_in:
             if password != confirm_password:
                 st.error("비밀번호가 일치하지 않습니다.")
             else:
-                register_user(username, password, selected_position, additional_info)
+                register_user(username, password, role, additional_info)
                 st.success("회원가입이 완료되었습니다! 로그인하세요.")
 else:
     # 로그인 성공 후 사이드바 메뉴 추가
